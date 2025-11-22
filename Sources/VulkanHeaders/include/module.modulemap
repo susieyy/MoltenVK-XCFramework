@@ -1,0 +1,22 @@
+module VulkanHeaders {
+    umbrella "."
+
+    // Exclude platform-specific headers for non-Apple platforms
+    exclude header "vulkan/vulkan_android.h"
+    exclude header "vulkan/vulkan_directfb.h"
+    exclude header "vulkan/vulkan_fuchsia.h"
+    exclude header "vulkan/vulkan_ggp.h"
+    exclude header "vulkan/vulkan_screen.h"
+    exclude header "vulkan/vulkan_vi.h"
+    exclude header "vulkan/vulkan_wayland.h"
+    exclude header "vulkan/vulkan_win32.h"
+    exclude header "vulkan/vulkan_xcb.h"
+    exclude header "vulkan/vulkan_xlib.h"
+    exclude header "vulkan/vulkan_xlib_xrandr.h"
+    exclude header "vulkan/vulkan_ohos.h"
+
+    // Exclude C++20 module
+    exclude header "vulkan/vulkan_video.cppm"
+
+    export *
+}

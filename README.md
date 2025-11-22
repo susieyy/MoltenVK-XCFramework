@@ -4,14 +4,15 @@ Binary distribution of MoltenVK as a Swift Package using XCFramework.
 
 ## Overview
 
-This package provides the MoltenVK implementation as a pre-built binary XCFramework for easy integration with Swift Package Manager. MoltenVK is a Vulkan Portability implementation that runs on Apple's Metal graphics framework.
+This package provides the MoltenVK implementation as a pre-built binary XCFramework along with Vulkan C headers for easy integration with Swift Package Manager. MoltenVK is a Vulkan Portability implementation that runs on Apple's Metal graphics framework.
 
 ## Features
 
 - **MoltenVK v1.4.0** - Vulkan implementation for Apple platforms
+- **Vulkan Headers SDK 1.4.328.1** - Complete Vulkan C API headers
 - **Static Library** - Uses `.a` static libraries (not dynamic)
 - **Universal Binary** - Supports both Intel (x86_64) and Apple Silicon (arm64)
-- **Binary-Only Distribution** - Small repository size, framework hosted on GitHub Releases
+- **Binary Distribution** - XCFramework hosted on GitHub Releases (no Git LFS)
 - **Swift Package Manager** - Easy integration with SPM projects
 
 ## Requirements
@@ -32,13 +33,20 @@ dependencies: [
 ]
 ```
 
-Then add `MoltenVK` to your target dependencies:
+Then add to your target dependencies:
 
 ```swift
 .target(
     name: "YourTarget",
     dependencies: [
-        .product(name: "MoltenVK", package: "MoltenVK-XCFramework")
+        // Option 1: Headers + MoltenVK (recommended)
+        .product(name: "MoltenVK-Complete", package: "MoltenVK-XCFramework")
+
+        // Option 2: Just headers
+        // .product(name: "VulkanHeaders", package: "MoltenVK-XCFramework")
+
+        // Option 3: Just MoltenVK binary
+        // .product(name: "MoltenVK", package: "MoltenVK-XCFramework")
     ]
 )
 ```
@@ -52,29 +60,55 @@ Then add `MoltenVK` to your target dependencies:
 
 ## Usage
 
-This package provides the MoltenVK binary framework. You'll need to import it in your C/Objective-C code or use a bridging header for Swift:
+### In C/Objective-C
 
 ```c
-#import <MoltenVK/mvk_vulkan.h>
-// or
+#import <vulkan/vulkan.h>
+
+// Use Vulkan C API
+VkInstance instance;
+VkInstanceCreateInfo createInfo = {
+    .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+    // ...
+};
+vkCreateInstance(&createInfo, NULL, &instance);
+```
+
+### In Swift (with Bridging Header)
+
+Create a bridging header `YourProject-Bridging-Header.h`:
+
+```c
 #import <vulkan/vulkan.h>
 ```
 
-For Swift projects with Vulkan C API wrappers, see [MoltenVK-SPM](https://github.com/susieyy/MoltenVK-SPM) which includes Swift helper types and concurrency wrappers.
+Then use in Swift:
+
+```swift
+var instance: VkInstance?
+var createInfo = VkInstanceCreateInfo()
+createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO
+vkCreateInstance(&createInfo, nil, &instance)
+```
+
+For Swift projects with high-level wrappers (async/await, actors, noncopyable types), see [MoltenVK-SPM](https://github.com/susieyy/MoltenVK-SPM) which includes Swift 6.2 concurrency features.
 
 ## Package Structure
 
-This is a **binary-only** package:
-- Repository contains only `Package.swift` and documentation
-- The MoltenVK.xcframework binary is hosted on GitHub Releases
-- Downloads automatically during package resolution
+This package provides:
+- **VulkanHeaders**: Vulkan C API headers (in repository)
+- **MoltenVK**: MoltenVK binary framework (hosted on GitHub Releases)
+- **MoltenVK-Complete**: Both headers and binary (recommended)
+
+The MoltenVK.xcframework binary (15MB) is hosted on GitHub Releases to keep the repository lightweight.
 
 ## Version Information
 
 - **MoltenVK Version**: v1.4.0
+- **Vulkan Headers Version**: SDK 1.4.328.1
 - **Type**: Static library (.a)
 - **Architecture**: Universal (arm64 + x86_64)
-- **Platform**: macOS 13.0+
+- **Platforms**: iOS 16.0+, macOS 13.0+
 
 See `.MoltenVK-version` for detailed version information.
 
@@ -88,20 +122,44 @@ Future platform support may include:
 - tvOS
 - visionOS
 
+## Package Products
+
+This package provides three products:
+
+### 1. MoltenVK-Complete (Recommended)
+Includes both Vulkan headers and MoltenVK binary.
+
+```swift
+.product(name: "MoltenVK-Complete", package: "MoltenVK-XCFramework")
+```
+
+### 2. VulkanHeaders
+Vulkan C headers only, if you want to provide your own Vulkan implementation.
+
+```swift
+.product(name: "VulkanHeaders", package: "MoltenVK-XCFramework")
+```
+
+### 3. MoltenVK
+MoltenVK binary only, if you already have headers from another source.
+
+```swift
+.product(name: "MoltenVK", package: "MoltenVK-XCFramework")
+```
+
 ## Related Packages
 
-- **[MoltenVK-SPM](https://github.com/susieyy/MoltenVK-SPM)** - Full package with Vulkan headers + binary + Swift wrappers
-- This package (MoltenVK-XCFramework) - Binary-only distribution
+- **[MoltenVK-SPM](https://github.com/susieyy/MoltenVK-SPM)** - Includes Swift 6.2 wrappers with async/await, actors, and noncopyable types
 
-Use this package if you:
-- Only need the MoltenVK binary framework
-- Want a smaller, binary-only dependency
-- Already have Vulkan headers from another source
+Use this package (MoltenVK-XCFramework) if you:
+- Want to use Vulkan C API directly
+- Need a lightweight dependency with just headers + binary
+- Prefer the binary hosted on GitHub Releases
 
 Use MoltenVK-SPM if you:
-- Need Vulkan C headers included
 - Want Swift 6.2 concurrency wrappers (async/await, actors)
-- Need comprehensive tests and examples
+- Need noncopyable types for automatic resource management
+- Want comprehensive tests and examples
 
 ## License
 
