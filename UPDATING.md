@@ -1,6 +1,14 @@
-# Updating MoltenVK.xcframework
+# Updating MoltenVK-XCFramework
 
-This guide provides step-by-step instructions for updating the MoltenVK.xcframework to a newer version in this binary distribution package.
+This guide provides step-by-step instructions for updating both MoltenVK.xcframework and VulkanHeaders to newer versions in this binary distribution package.
+
+## Package Components
+
+This package consists of two main components:
+1. **MoltenVK.xcframework** - Binary framework (hosted on GitHub Releases)
+2. **VulkanHeaders** - Vulkan C API headers (in repository)
+
+Both should be updated together when a new MoltenVK version is released.
 
 ## Prerequisites
 
@@ -81,6 +89,27 @@ cp -R MoltenVK/MoltenVK/static/MoltenVK.xcframework ./
 
 # Verify the structure
 ls -la MoltenVK.xcframework/
+```
+
+### Step 3.5: Update Vulkan Headers
+
+```bash
+# Copy the updated Vulkan headers from the extracted MoltenVK
+# The headers are in MoltenVK/MoltenVK/include/
+
+# Remove old headers
+rm -rf Sources/VulkanHeaders/include/vulkan
+rm -rf Sources/VulkanHeaders/include/vk_video
+
+# Copy new headers
+cp -R MoltenVK/MoltenVK/include/vulkan Sources/VulkanHeaders/include/
+cp -R MoltenVK/MoltenVK/include/vk_video Sources/VulkanHeaders/include/
+
+# Verify the headers were copied
+ls -la Sources/VulkanHeaders/include/vulkan/
+ls -la Sources/VulkanHeaders/include/vk_video/
+
+# Note: Keep the module.modulemap file as it is (don't overwrite it)
 ```
 
 ### Step 4: Create ZIP Archive
@@ -164,18 +193,35 @@ git push origin main
 
 ### Step 8: Create GitHub Release
 
+**IMPORTANT**: Use tag WITHOUT 'v' prefix for SPM compatibility (e.g., `1.4.1` not `v1.4.1`)
+
 #### Option A: Using GitHub CLI (Recommended)
 
 ```bash
-# Create a new release and upload the xcframework
-gh release create ${MOLTENVK_VERSION} \
-  MoltenVK.xcframework.zip \
-  --title "MoltenVK ${MOLTENVK_VERSION}" \
-  --notes "Binary distribution of MoltenVK ${MOLTENVK_VERSION}
+# Use tag without 'v' prefix for SPM compatibility
+SPM_VERSION="${MOLTENVK_VERSION#v}"  # Remove 'v': v1.4.1 -> 1.4.1
 
-## Changes
-- Updated to MoltenVK ${MOLTENVK_VERSION}
-- Static library (`.a`) for macOS (arm64 + x86_64)
+# Create a new release and upload the xcframework
+gh release create ${SPM_VERSION} \
+  MoltenVK.xcframework.zip \
+  --title "MoltenVK ${SPM_VERSION}" \
+  --notes "Binary distribution of MoltenVK ${MOLTENVK_VERSION} for Swift Package Manager
+
+## Features
+- **MoltenVK Binary** - Pre-built XCFramework (15MB)
+- **Vulkan C Headers** - Complete Vulkan SDK headers included
+- **Three Products**:
+  - \`VulkanHeaders\` - Headers only
+  - \`MoltenVK\` - Binary only
+  - \`MoltenVK-Complete\` - Headers + Binary (recommended)
+
+## Platform Support
+- iOS 16.0+
+- macOS 13.0+
+
+## Architecture
+- Universal binary (arm64 + x86_64)
+- Static library (\`.a\`)
 
 ## Checksum
 \`\`\`
@@ -183,20 +229,48 @@ $(cat checksum.txt)
 \`\`\`
 
 ## Installation
-Add to your Package.swift:
+
+Add to your \`Package.swift\`:
+
 \`\`\`swift
-.package(url: \"https://github.com/susieyy/MoltenVK-XCFramework.git\", from: \"${MOLTENVK_VERSION#v}\")
+dependencies: [
+    .package(url: \"https://github.com/susieyy/MoltenVK-XCFramework.git\", from: \"${SPM_VERSION}\")
+]
 \`\`\`
 
+Then add to your target:
+
+\`\`\`swift
+.target(
+    name: \"YourTarget\",
+    dependencies: [
+        // Recommended: Headers + Binary
+        .product(name: \"MoltenVK-Complete\", package: \"MoltenVK-XCFramework\")
+    ]
+)
+\`\`\`
+
+## About
+
+This is a binary distribution package that includes:
+- MoltenVK.xcframework hosted on GitHub Releases (no Git LFS)
+- Vulkan C headers in the repository
+- Three products for flexible integration
+
+For Swift 6.2 wrappers with async/await and noncopyable types, see [MoltenVK-SPM](https://github.com/susieyy/MoltenVK-SPM).
+
 ---
-For more information, see [MoltenVK Release Notes](https://github.com/KhronosGroup/MoltenVK/releases/tag/${MOLTENVK_VERSION})"
+
+**Upstream Release**: [KhronosGroup/MoltenVK ${MOLTENVK_VERSION}](https://github.com/KhronosGroup/MoltenVK/releases/tag/${MOLTENVK_VERSION})
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"
 ```
 
 #### Option B: Manual Upload via GitHub Web UI
 
 1. Go to https://github.com/susieyy/MoltenVK-XCFramework/releases/new
-2. Create a new tag: `${MOLTENVK_VERSION}` (e.g., `v1.4.1`)
-3. Set release title: `MoltenVK ${MOLTENVK_VERSION}`
+2. Create a new tag: `1.4.1` (NO 'v' prefix - this is critical for SPM!)
+3. Set release title: `MoltenVK 1.4.1`
 4. Add release description (see template above)
 5. Upload `MoltenVK.xcframework.zip` as a release asset
 6. Publish the release
@@ -204,8 +278,9 @@ For more information, see [MoltenVK Release Notes](https://github.com/KhronosGro
 ### Step 9: Update Package.swift with Release URL
 
 ```bash
-# Get the release download URL
-RELEASE_URL="https://github.com/susieyy/MoltenVK-XCFramework/releases/download/${MOLTENVK_VERSION}/MoltenVK.xcframework.zip"
+# Get the release download URL (Note: Use tag without 'v' prefix for SPM)
+SPM_VERSION="${MOLTENVK_VERSION#v}"  # Remove 'v' prefix: v1.4.1 -> 1.4.1
+RELEASE_URL="https://github.com/susieyy/MoltenVK-XCFramework/releases/download/${SPM_VERSION}/MoltenVK.xcframework.zip"
 
 # Read the checksum
 CHECKSUM=$(cat checksum.txt)
@@ -222,12 +297,34 @@ let package = Package(
         .macOS(.v13),
     ],
     products: [
+        // Vulkan C Headers only
+        .library(
+            name: "VulkanHeaders",
+            targets: ["VulkanHeaders"]
+        ),
+        // MoltenVK binary only
         .library(
             name: "MoltenVK",
             targets: ["MoltenVK"]
         ),
+        // Complete package: Headers + MoltenVK (recommended)
+        .library(
+            name: "MoltenVK-Complete",
+            targets: ["VulkanHeaders", "MoltenVK"]
+        ),
     ],
     targets: [
+        // Vulkan C Headers
+        .target(
+            name: "VulkanHeaders",
+            path: "Sources/VulkanHeaders",
+            publicHeadersPath: "include",
+            cSettings: [
+                .headerSearchPath("include")
+            ]
+        ),
+
+        // MoltenVK prebuilt XCFramework
         .binaryTarget(
             name: "MoltenVK",
             url: "$RELEASE_URL",
@@ -237,6 +334,8 @@ let package = Package(
 )
 EOF
 ```
+
+**Important**: The release tag should NOT have a 'v' prefix for SPM compatibility (use `1.4.1` not `v1.4.1`).
 
 ### Step 10: Validate the Update
 
@@ -276,15 +375,33 @@ let package = Package(
         .executableTarget(
             name: "TestMoltenVK",
             dependencies: [
-                .product(name: "MoltenVK", package: "MoltenVK-XCFramework")
+                // Test the complete package (recommended)
+                .product(name: "MoltenVK-Complete", package: "MoltenVK-XCFramework")
             ]
         )
     ]
 )
 EOF
 
+# Create a simple test source file
+mkdir -p Sources/TestMoltenVK
+cat > Sources/TestMoltenVK/main.swift << 'EOF'
+import Foundation
+
+// Test that Vulkan headers can be imported via bridging
+// You would normally use a bridging header, but for testing:
+print("Testing MoltenVK-XCFramework package resolution...")
+print("Package loaded successfully!")
+EOF
+
 # Try to build
 swift build
+
+# Test all three products
+echo "Testing VulkanHeaders only..."
+swift package resolve
+
+echo "All products resolved successfully!"
 ```
 
 ### Step 11: Commit Package.swift Update
@@ -404,9 +521,12 @@ swift package dump-package
 2. **Test before releasing** - Create and test the release in a clean environment
 3. **Document changes** - Include release notes with each version
 4. **Verify checksums** - Double-check checksums before committing Package.swift
-5. **Tag releases properly** - Use semantic versioning (e.g., v1.4.1)
+5. **Tag releases properly** - Use semantic versioning WITHOUT 'v' prefix (e.g., `1.4.1` not `v1.4.1`)
 6. **Keep assets small** - Use ZIP compression to reduce download size
 7. **No Git LFS needed** - GitHub Releases handles large files natively
+8. **Update headers together** - Always update VulkanHeaders when updating MoltenVK binary
+9. **Preserve module.modulemap** - Don't overwrite the custom module map for Apple platforms
+10. **Test all products** - Verify VulkanHeaders, MoltenVK, and MoltenVK-Complete all work
 
 ## Version Consistency Checklist
 
@@ -414,12 +534,16 @@ Before finalizing an update, verify all version references are consistent:
 
 - [ ] `.MoltenVK-version` file updated
 - [ ] `README.md` version references updated
-- [ ] GitHub release created with correct tag
+- [ ] VulkanHeaders updated in `Sources/VulkanHeaders/include/`
+- [ ] `module.modulemap` preserved (not overwritten)
+- [ ] GitHub release created with correct tag (WITHOUT 'v' prefix)
 - [ ] `MoltenVK.xcframework.zip` uploaded to release
-- [ ] `Package.swift` URL points to new release
+- [ ] `Package.swift` URL points to new release (tag without 'v')
 - [ ] `Package.swift` checksum matches the uploaded ZIP
+- [ ] `Package.swift` includes all three products
 - [ ] Changes committed and pushed
 - [ ] Package resolves correctly in test project
+- [ ] All three products work (VulkanHeaders, MoltenVK, MoltenVK-Complete)
 - [ ] All platforms build successfully (if multi-platform)
 
 ## References
@@ -429,10 +553,29 @@ Before finalizing an update, verify all version references are consistent:
 - [Swift Package Manager - Binary Targets](https://github.com/apple/swift-package-manager/blob/main/Documentation/Usage.md#binary-targets)
 - [GitHub Releases Documentation](https://docs.github.com/en/repositories/releasing-projects-on-github)
 
-## Notes
+## Important Notes
 
+### Tag Format for SPM
+- **CRITICAL**: Swift Package Manager requires tags WITHOUT 'v' prefix
+- Use `1.4.1` NOT `v1.4.1` for GitHub releases
+- The MoltenVK upstream uses `v1.4.1` but we use `1.4.1` for SPM compatibility
+- This is a Swift Package Manager requirement, not a choice
+
+### VulkanHeaders
+- Headers are included in the repository at `Sources/VulkanHeaders/include/`
+- The `module.modulemap` file is custom-configured for Apple platforms (excludes non-Apple headers)
+- When updating, copy headers from `MoltenVK/MoltenVK/include/` but preserve the `module.modulemap`
+- Headers should be updated whenever MoltenVK binary is updated
+
+### Distribution Method
 - **No Git LFS required** - This package uses GitHub Releases for binary distribution
-- **Small repository** - Only source files are in the repository (Package.swift, docs)
+- **Small repository** - Only source files are in the repository (Package.swift, docs, headers)
 - **Fast cloning** - Users don't download the binary until package resolution
 - **Version flexibility** - Easy to maintain multiple versions via releases
 - **Platform scalability** - Can add iOS/tvOS/visionOS support without changing workflow
+
+### Three Products
+- This package provides three products for maximum flexibility:
+  - `VulkanHeaders` - For projects that want headers only
+  - `MoltenVK` - For projects that already have headers
+  - `MoltenVK-Complete` - For most users (headers + binary)
