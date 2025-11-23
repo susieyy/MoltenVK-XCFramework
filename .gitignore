@@ -14,3 +14,6 @@ DerivedData/
 # Temporary files
 *.zip
 MoltenVK.xcframework/
+build-xcframework/
+checksum.txt
+*.backup

@@ -1,12 +1,13 @@
 Version: v1.4.0
-Release Date: 2024-08-20
+Release Date: 2025-11-23
 Source: https://github.com/KhronosGroup/MoltenVK/releases/tag/v1.4.0
-Download URL: https://github.com/KhronosGroup/MoltenVK/releases/download/v1.4.0/MoltenVK-macos.tar
+Download URL: https://github.com/KhronosGroup/MoltenVK/releases/download/v1.4.0/MoltenVK-all.tar
 Type: Static (.a)
-Architecture: macOS arm64_x86_64 (Universal)
+Architecture: Universal (arm64 + x86_64)
+Platforms: macOS, iOS (device + simulator)
 
 Vulkan API Version: 1.4.323
-Package Created: 2025-01-22
+Package Created: 2025-11-23
 
 Distribution: Binary-only (GitHub Releases)
 Repository: https://github.com/susieyy/MoltenVK-XCFramework

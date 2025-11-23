@@ -136,11 +136,13 @@ See `.MoltenVK-version` for detailed version metadata and upstream release infor
 
 Currently supports:
 - macOS (arm64 + x86_64 universal binary)
+- iOS Device (arm64)
+- iOS Simulator (arm64 + x86_64)
 
 Future platform support may include:
-- iOS (device and simulator)
-- tvOS
+- tvOS (device and simulator)
 - visionOS
+- Mac Catalyst
 
 ## Package Products
 
